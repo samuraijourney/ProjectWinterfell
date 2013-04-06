@@ -1,0 +1,4 @@
+1. EGit with Eclipse (Tutorial)
+
+http://www.vogella.com/articles/EGit/article.html
+============================================================
