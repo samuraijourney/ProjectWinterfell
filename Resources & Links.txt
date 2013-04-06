@@ -2,3 +2,7 @@
 
 http://www.vogella.com/articles/EGit/article.html
 ============================================================
+
+2. Bluetooth Protocols and Examples
+
+http://people.csail.mit.edu/albert/bluez-intro/
