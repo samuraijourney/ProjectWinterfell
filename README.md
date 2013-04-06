@@ -1,4 +1,0 @@
-ProjectWinterfell
-=================
-
-Winter is coming
