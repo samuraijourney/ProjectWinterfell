@@ -8,6 +8,7 @@ import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -33,6 +34,8 @@ public class BluetoothNetwork implements INetwork
 	private static ArrayList<BluetoothDevice> _discoveredDevices = new ArrayList<BluetoothDevice>();
 	/** Object to wait on while the device discovery process completes **/
 	private static final Object _deviceDiscoveryWaitObject = new Object();
+	/** Lock allowing for only one item to access socket connection at a time **/
+	private static final ReentrantLock _ioLock = new ReentrantLock();
 	/** Flag indicating whether or not there is an active connection **/
 	private boolean _connected = false;
 	/** Single instance of our bluetooth network class to be returned **/
@@ -59,6 +62,12 @@ public class BluetoothNetwork implements INetwork
 	 *****************************************************************/
 	public void Connect(Object target) throws IOException , IllegalArgumentException
 	{
+		if(_connected)
+		{
+			// Must log here
+			return;
+		}
+		
 		if(!(target instanceof BluetoothDevice))
 		{
 			throw new IllegalArgumentException("Illegal argument passed, must be of type BluetoothDevice");
@@ -71,11 +80,16 @@ public class BluetoothNetwork implements INetwork
 		{
 			// Cancel any potential discovery tasks just in case because they could break the connect operation.
 			BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
-			_socket.connect();
+			_ioLock.lock();
+			{
+				_socket.connect();
+			}
+			_ioLock.unlock();
 		}
 		catch (IOException e)
 		{
 			_socket.close();
+			_ioLock.unlock();
 			throw e;
 		}
 		
@@ -94,13 +108,25 @@ public class BluetoothNetwork implements INetwork
 			throw new ConnectException("No active connection available");
 		}
 		
-		_inputStream.close();
-		_outputStream.close();
-		_socket.close();
-		
-		_inputStream = null;
-		_outputStream = null;
-		_socket = null;
+		_ioLock.lock();
+		{
+			try
+			{
+				_inputStream.close();
+				_outputStream.close();
+				_socket.close();
+				
+				_inputStream = null;
+				_outputStream = null;
+				_socket = null;
+			}
+			catch(IOException e)
+			{
+				_ioLock.unlock();
+				throw e;
+			}
+		}
+		_ioLock.unlock();
 		
 		_connected = false;
 	}
@@ -205,7 +231,22 @@ public class BluetoothNetwork implements INetwork
 			throw new IOException("No input stream available");
 		}
 		
-		return _inputStream.readLine();
+		String response;
+		_ioLock.lock();
+		{
+			try
+			{
+				response = _inputStream.readLine();
+			}
+			catch(IOException e)
+			{
+				_ioLock.unlock();
+				throw e;
+			}
+		}
+		_ioLock.unlock();
+		
+		return response;
 	}
 
 	/*****************************************************************
@@ -218,7 +259,19 @@ public class BluetoothNetwork implements INetwork
 			throw new IOException("No output stream available");
 		}
 		
-		_outputStream.write(FormatCommand(command));
+		_ioLock.lock();
+		{
+			try
+			{
+				_outputStream.write(FormatCommand(command));
+			}
+			catch(IOException e)
+			{
+				_ioLock.unlock();
+				throw e;
+			}
+		}
+		_ioLock.unlock();
 	}
 	
 	/***************************************************************
