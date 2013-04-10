@@ -43,6 +43,7 @@ public class Logger
 	 * 
 	 * Ex. Logger.Log.Info("I am logging");
 	 * 	   Logger.Log.Error("There has been an error",exception);
+	 * 	   Logger.Log.Debug("I am debugging",exception);
 	 * 
 	 * @author Akram Kassay
 	 ***************************************************************/
