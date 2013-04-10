@@ -17,6 +17,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import client.android.logging.Logger;
 import client.android.winterfell.ApplicationInstance;
 
 /***************************************************************
@@ -35,7 +36,7 @@ public class BluetoothNetwork implements INetwork
 	/** Object to wait on while the device discovery process completes **/
 	private static final Object _deviceDiscoveryWaitObject = new Object();
 	/** Lock allowing for only one item to access socket connection at a time **/
-	private static final ReentrantLock _ioLock = new ReentrantLock();
+	private final ReentrantLock _ioLock = new ReentrantLock();
 	/** Flag indicating whether or not there is an active connection **/
 	private boolean _connected = false;
 	/** Single instance of our bluetooth network class to be returned **/
@@ -64,21 +65,26 @@ public class BluetoothNetwork implements INetwork
 	{
 		if(_connected)
 		{
-			// Must log here
+			Logger.Log.Debug("There is already a connection available.");
 			return;
 		}
 		
 		if(!(target instanceof BluetoothDevice))
 		{
-			throw new IllegalArgumentException("Illegal argument passed, must be of type BluetoothDevice");
+			IllegalArgumentException e = new IllegalArgumentException("Illegal argument passed, must be of type BluetoothDevice");
+			Logger.Log.Error(e.getMessage(),e);
+			throw e;
 		}
 		
 		BluetoothDevice device = (BluetoothDevice)target;
+		
+		Logger.Log.Info(String.format("Trying to create socket and connect to pin:%s", _pin.toString()));
+		
 		_socket = device.createRfcommSocketToServiceRecord(_pin);
 		
 		try
 		{
-			// Cancel any potential discovery tasks just in case because they could break the connect operation.
+			// Cancel any potential discovery tasks just in case because they could break the connect operation
 			BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
 			_ioLock.lock();
 			{
@@ -90,12 +96,15 @@ public class BluetoothNetwork implements INetwork
 		{
 			_socket.close();
 			_ioLock.unlock();
+			Logger.Log.Error(String.format("Could not connect to pin:%s", _pin.toString()),e);
 			throw e;
 		}
 		
 		_inputStream = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
 		_outputStream = new BufferedOutputStream(_socket.getOutputStream());
 		_connected = true;
+		
+		Logger.Log.Info(String.format("Connection successful, now connected to pin:%s", _pin.toString()));
 	}
 
 	/*****************************************************************
@@ -105,8 +114,12 @@ public class BluetoothNetwork implements INetwork
 	{
 		if(!_connected)
 		{
-			throw new ConnectException("No active connection available");
+			ConnectException e = new ConnectException("No active connection available");
+			Logger.Log.Error(e.getMessage(), e);
+			throw e;
 		}
+		
+		Logger.Log.Info(String.format("Trying to disconnect from pin: %s", _pin.toString()));
 		
 		_ioLock.lock();
 		{
@@ -123,10 +136,13 @@ public class BluetoothNetwork implements INetwork
 			catch(IOException e)
 			{
 				_ioLock.unlock();
+				Logger.Log.Error(String.format("Could not close IO streams with pin: %s", _pin.toString()),e);
 				throw e;
 			}
 		}
 		_ioLock.unlock();
+		
+		Logger.Log.Info(String.format("Successfully disconnected from pin: %s", _pin.toString()));
 		
 		_connected = false;
 	}
@@ -157,6 +173,8 @@ public class BluetoothNetwork implements INetwork
 			return null;
 		}
 		
+		Logger.Log.Info("Bluetooth discovery started, searching for available devices");
+		
 		BroadcastReceiver receiver = BluetoothDiscoverer.CreateReceiver();
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
@@ -167,13 +185,15 @@ public class BluetoothNetwork implements INetwork
 		{
 			_deviceDiscoveryWaitObject.wait();
 			ApplicationInstance.GetContext().unregisterReceiver(receiver);
+			// Do this just in case it hasn't stopped discovering for some strange reason
 			BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
 			
 			return _discoveredDevices.toArray(new BluetoothDevice[_discoveredDevices.size()]);
 		} 
 		catch (InterruptedException e) 
 		{
-			// Add logging information here
+			BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+			Logger.Log.Error("Bluetooth discovery service has been interrupted",e);
 			return null;
 		}
 	}
@@ -185,6 +205,8 @@ public class BluetoothNetwork implements INetwork
 	 *****************************************************************/
 	public BluetoothDevice[] GetPairedDevices()
 	{
+		Logger.Log.Info("Gathering all paired devices");
+		
 		Set<BluetoothDevice> devices = BluetoothAdapter.getDefaultAdapter().getBondedDevices();
 		
 		if (devices.size() == 0)
@@ -228,7 +250,9 @@ public class BluetoothNetwork implements INetwork
 	{
 		if(_inputStream == null)
 		{
-			throw new IOException("No input stream available");
+			IOException e = new IOException("No input stream available");
+			Logger.Log.Error(e.getMessage(),e);
+			throw e;
 		}
 		
 		String response;
@@ -241,6 +265,7 @@ public class BluetoothNetwork implements INetwork
 			catch(IOException e)
 			{
 				_ioLock.unlock();
+				Logger.Log.Error("Could not read from input stream",e);
 				throw e;
 			}
 		}
@@ -256,7 +281,9 @@ public class BluetoothNetwork implements INetwork
 	{
 		if(_outputStream == null)
 		{
-			throw new IOException("No output stream available");
+			IOException e = new IOException("No output stream available");
+			Logger.Log.Error(e.getMessage(),e);
+			throw e;
 		}
 		
 		_ioLock.lock();
@@ -268,6 +295,7 @@ public class BluetoothNetwork implements INetwork
 			catch(IOException e)
 			{
 				_ioLock.unlock();
+				Logger.Log.Error("Could not write to output stream",e);
 				throw e;
 			}
 		}
@@ -306,10 +334,12 @@ public class BluetoothNetwork implements INetwork
 		             if(!_discoveredDevices.contains(device))
 		             {
 		            	 _discoveredDevices.add(device);
+		            	 Logger.Log.Info(String.format("Discovered device: %s",device.getName()));
 		             }
 			       }
 				   else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action))
 				   {
+					   Logger.Log.Info("Bluetooth discovery finished");
 					   _deviceDiscoveryWaitObject.notify();
 				   }
 				}
