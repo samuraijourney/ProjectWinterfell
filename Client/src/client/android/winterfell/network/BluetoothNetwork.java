@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import client.android.logging.Logger;
 import client.android.winterfell.ApplicationInstance;
+import client.android.winterfell.network.listeners.IBluetoothDiscoveryListener;
 
 /***************************************************************
  * Definition of the bluetooth network and all its options.
@@ -27,12 +28,14 @@ import client.android.winterfell.ApplicationInstance;
  * 
  * @author Akram Kassay
  ***************************************************************/
-public class BluetoothNetwork implements INetwork
+public class BluetoothNetwork extends Network
 {
 	/** The list of all already paired devices with the phone **/
 	private static ArrayList<BluetoothDevice> _pairedDevices = new ArrayList<BluetoothDevice>();
 	/** The list of all devices that have been discovered **/
 	private static ArrayList<BluetoothDevice> _discoveredDevices = new ArrayList<BluetoothDevice>();
+	/** The list of all devices which want to listen for a device discovery event **/
+	private static ArrayList<IBluetoothDiscoveryListener> _listeners = new ArrayList<IBluetoothDiscoveryListener>();
 	/** Object to wait on while the device discovery process completes **/
 	private static final Object _deviceDiscoveryWaitObject = new Object();
 	/** Lock allowing for only one item to access socket connection at a time **/
@@ -40,7 +43,7 @@ public class BluetoothNetwork implements INetwork
 	/** Flag indicating whether or not there is an active connection **/
 	private boolean _connected = false;
 	/** Single instance of our bluetooth network class to be returned **/
-	private INetwork _bluetoothNetwork;
+	private Network _bluetoothNetwork;
 	/** Input stream for reading responses from robot **/
 	private BufferedReader _inputStream;
 	/** Output stream for sending commands to the robot **/
@@ -173,6 +176,8 @@ public class BluetoothNetwork implements INetwork
 			return null;
 		}
 		
+		FireDiscoveryStartEvent();
+		
 		Logger.Log.Info("Bluetooth discovery started, searching for available devices");
 		
 		BroadcastReceiver receiver = BluetoothDiscoverer.CreateReceiver();
@@ -187,6 +192,8 @@ public class BluetoothNetwork implements INetwork
 			ApplicationInstance.GetContext().unregisterReceiver(receiver);
 			// Do this just in case it hasn't stopped discovering for some strange reason
 			BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+			
+			FireDiscoveryEndEvent();
 			
 			return _discoveredDevices.toArray(new BluetoothDevice[_discoveredDevices.size()]);
 		} 
@@ -228,7 +235,7 @@ public class BluetoothNetwork implements INetwork
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/
-	public INetwork Instance() 
+	public Network Instance() 
 	{
 		if(_bluetoothNetwork == null)
 			_bluetoothNetwork = new BluetoothNetwork();
@@ -246,7 +253,7 @@ public class BluetoothNetwork implements INetwork
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/
-	public String ReadLine() throws IOException
+	protected String Read() throws IOException
 	{
 		if(_inputStream == null)
 		{
@@ -270,6 +277,8 @@ public class BluetoothNetwork implements INetwork
 			}
 		}
 		_ioLock.unlock();
+		
+		FireNetworkInfoReceivedEvent(response);
 		
 		return response;
 	}
@@ -300,6 +309,64 @@ public class BluetoothNetwork implements INetwork
 			}
 		}
 		_ioLock.unlock();
+	}
+	
+	/*****************************************************************
+	 * Adds a bluetooth discovery listener.
+	 * 
+	 * @param listener the discovery listener to add
+	 *****************************************************************/
+	public synchronized void AddBluetoothDiscoveryListener(IBluetoothDiscoveryListener listener)
+	{
+		if(!_listeners.contains(listener))
+		{
+			_listeners.add(listener);
+		}
+	}
+	
+	/*****************************************************************
+	 * Removes a bluetooth discovery listener.
+	 * 
+	 * @param listener the discovery listener to remove
+	 *****************************************************************/
+	public synchronized void RemoveBluetoothDiscoveryListener(IBluetoothDiscoveryListener listener)
+	{
+		_listeners.remove(listener);
+	}
+	
+	/*****************************************************************
+	 * Launches bluetooth device discovered event for all listeners.
+	 * 
+	 * @param device the bluetooth device discovered
+	 *****************************************************************/
+	private static void FireDeviceDiscoveredEvent(BluetoothDevice device)
+	{
+		for(IBluetoothDiscoveryListener listener : _listeners)
+		{
+			listener.BluetoothDeviceDiscovered(device);
+		}
+	}
+	
+	/*****************************************************************
+	 * Launches bluetooth discovery start event.
+	 *****************************************************************/
+	private static void FireDiscoveryStartEvent()
+	{
+		for(IBluetoothDiscoveryListener listener : _listeners)
+		{
+			listener.BluetoothDiscoveryStart();
+		}
+	}
+	
+	/*****************************************************************
+	 * Launches bluetooth discovery end event.
+	 *****************************************************************/
+	private static void FireDiscoveryEndEvent()
+	{
+		for(IBluetoothDiscoveryListener listener : _listeners)
+		{
+			listener.BluetoothDiscoveryEnd();
+		}
 	}
 	
 	/***************************************************************
@@ -335,6 +402,7 @@ public class BluetoothNetwork implements INetwork
 		             {
 		            	 _discoveredDevices.add(device);
 		            	 Logger.Log.Info(String.format("Discovered device: %s",device.getName()));
+		            	 BluetoothNetwork.FireDeviceDiscoveredEvent(device);
 		             }
 			       }
 				   else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action))
