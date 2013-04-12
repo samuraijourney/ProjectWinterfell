@@ -1,4 +1,4 @@
-package client.android.logging;
+package client.android.winterfell.logging;
 
 
 /***************************************************************

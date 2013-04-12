@@ -3,7 +3,7 @@ package client.android.winterfell.command;
 import java.util.PriorityQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
-import client.android.logging.Logger;
+import client.android.winterfell.logging.Logger;
 import client.android.winterfell.network.INetworkListener;
 import client.android.winterfell.network.Network;
 

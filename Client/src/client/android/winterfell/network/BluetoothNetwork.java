@@ -21,8 +21,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import client.android.logging.Logger;
 import client.android.winterfell.ApplicationInstance;
+import client.android.winterfell.logging.Logger;
 
 /***************************************************************
  * Definition of the bluetooth network and all its options.

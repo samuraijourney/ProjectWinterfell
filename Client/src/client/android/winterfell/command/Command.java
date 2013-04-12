@@ -7,7 +7,7 @@ import junit.framework.Assert;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import client.android.logging.Logger;
+import client.android.winterfell.logging.Logger;
 import client.android.winterfell.network.INetworkListener;
 import client.android.winterfell.network.Network;
 
