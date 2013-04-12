@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 
+import org.apache.http.ParseException;
+import org.json.JSONObject;
+
 
 /***************************************************************
  * Governs the communications with any remote device, this is only
@@ -44,10 +47,10 @@ public abstract class Network
 	/*****************************************************************
 	 * Reads stream until a CRLF character is hit.
 	 * 
-	 * @return the info read from the stream
+	 * @return the info read from the stream in a JSONObject
 	 * @throws IOException no available input stream to read from
 	 *****************************************************************/
-	protected abstract String Read() throws IOException;
+	protected abstract JSONObject Read() throws IOException, ParseException;
 	
 	/*****************************************************************
 	 * Sends the given command to the robot.
@@ -55,7 +58,7 @@ public abstract class Network
 	 * @param command the command to send
 	 * @throws IOException no available output stream to send too
 	 *****************************************************************/
-	public abstract void Send(String command) throws IOException;
+	public abstract void Send(JSONObject command) throws IOException;
 	
 	/*****************************************************************
 	 * Adds a network information listener.

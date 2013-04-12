@@ -51,6 +51,8 @@ public final class CommandScheduler implements INetworkListener
 				_commandsQueue.add(command);
 			}
 			_queueLock.unlock();
+			
+			Logger.Log.Info("Added command to scheduler queue");
 		}
 	}
 	
@@ -65,7 +67,8 @@ public final class CommandScheduler implements INetworkListener
 		}
 		return _commandScheduler;
 	}
-
+	
+	// Must figure out information acknowledge codes for server and app side.
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/

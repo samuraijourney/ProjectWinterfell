@@ -71,7 +71,7 @@ public final class Command implements INetworkListener
 				Assert.assertEquals("The command is null!",_command, null);
 				return;
 			}
-			_network.Send(_command.toString());
+			_network.Send(_command);
 		} 
 		catch (IOException e) 
 		{
@@ -92,7 +92,9 @@ public final class Command implements INetworkListener
 	/*****************************************************************
 	 * Updates command's JSONObject argument which is passed in.
 	 * 
-	 * @param newCommand the new JSONObject to send
+	 * @param title the name of the new command argument
+	 * @param value the value of the new command argument
+	 * @return indicator as to whether or not the argument was modified
 	 *****************************************************************/
 	public final boolean ModifyCommandArgument(String title, Object newValue)
 	{
@@ -108,6 +110,31 @@ public final class Command implements INetworkListener
 				Logger.Log.Error(message,e);
 			}
 			return true;
+		}
+		return false;
+	}
+	
+	/*****************************************************************
+	 * Appends an argument to a JSONObject.
+	 * 
+	 * @param title the name of the new command argument
+	 * @param value the value of the new command argument
+	 * @return indicator as to whether or not the command argument was appended
+	 *****************************************************************/
+	public final boolean AppendCommandArgument(String title, Object value)
+	{
+		if(!_command.has(title))
+		{
+			try 
+			{
+				_command.accumulate(title, value);
+				return true;
+			} 
+			catch (JSONException e) 
+			{
+				String message = "Cannot append command argument to JSON";
+				Logger.Log.Error(message,e);
+			}
 		}
 		return false;
 	}

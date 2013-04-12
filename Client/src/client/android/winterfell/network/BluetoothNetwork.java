@@ -10,6 +10,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.http.ParseException;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -154,7 +158,7 @@ public final class BluetoothNetwork extends Network
 	}
 	
 	/*****************************************************************
-	 * Formats the command, THIS WILL HAVE TO BE CHANGED.
+	 * Formats the command.
 	 * 
 	 * @param command the string to format
 	 * @return the byte representation of the command to send
@@ -256,7 +260,7 @@ public final class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/
-	protected final String Read() throws IOException
+	protected final JSONObject Read() throws IOException, ParseException
 	{
 		if(_inputStream == null)
 		{
@@ -265,18 +269,24 @@ public final class BluetoothNetwork extends Network
 			throw e;
 		}
 		
-		String response;
+		JSONObject response;
 		_ioLock.lock();
 		{
 			try
 			{
-				response = _inputStream.readLine();
+				response = new JSONObject(_inputStream.readLine());
 			}
 			catch(IOException e)
 			{
 				_ioLock.unlock();
 				Logger.Log.Error("Could not read from input stream",e);
 				throw e;
+			} 
+			catch (JSONException e) 
+			{
+				_ioLock.unlock();
+				Logger.Log.Error("Could not parse input stream response",e);
+				throw new ParseException("Could not parse JSON input string");
 			}
 		}
 		_ioLock.unlock();
@@ -289,7 +299,7 @@ public final class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/
-	public final void Send(String command) throws IOException
+	public final void Send(JSONObject command) throws IOException
 	{
 		if(command == null)
 		{
@@ -307,7 +317,7 @@ public final class BluetoothNetwork extends Network
 		{
 			try
 			{
-				_outputStream.write(FormatCommand(command));
+				_outputStream.write(FormatCommand(command.toString()));
 			}
 			catch(IOException e)
 			{
