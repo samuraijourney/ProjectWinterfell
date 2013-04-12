@@ -1,5 +1,6 @@
 package client.android.logging;
 
+
 /***************************************************************
  * Controller for all the log manipulation operations.
  * 
@@ -40,6 +41,10 @@ public class Logger
 	
 	/***************************************************************
 	 * Controller for all the logging to the ADB (Android Debug Bridge).
+	 * MAKE SURE YOU INCREMENT STACK TRACE INDEX IN ANY FUNCTIONS YOU ADD
+	 * HERE, this is to allow for future flexibility if we start switching
+	 * around logging procedures we can still keep track of the proper
+	 * calling method to the logger from the stack trace.
 	 * 
 	 * Ex. Logger.Log.Info("I am logging");
 	 * 	   Logger.Log.Error("There has been an error",exception);
