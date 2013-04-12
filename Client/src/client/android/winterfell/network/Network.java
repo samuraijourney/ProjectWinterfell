@@ -17,7 +17,8 @@ import org.json.JSONObject;
  ***************************************************************/
 public abstract class Network 
 {	
-	private static ArrayList<INetworkListener> _listeners = new ArrayList<INetworkListener>();
+	private static ArrayList<INetworkInfoListener> _infoListeners = new ArrayList<INetworkInfoListener>();
+	private static ArrayList<INetworkSessionListener> _sessionListeners = new ArrayList<INetworkSessionListener>();
 	
 	/*****************************************************************
 	 * Tries to establish a connection to the target object provided.
@@ -65,11 +66,24 @@ public abstract class Network
 	 * 
 	 * @param listener the network information listener to add
 	 *****************************************************************/
-	public void AddNetworkInfoListener(INetworkListener listener)
+	public void AddNetworkInfoListener(INetworkInfoListener listener)
 	{
-		if(!_listeners.contains(listener))
+		if(!_infoListeners.contains(listener))
 		{
-			_listeners.add(listener);
+			_infoListeners.add(listener);
+		}
+	}
+	
+	/*****************************************************************
+	 * Adds a network session listener.
+	 * 
+	 * @param listener the network session listener to add
+	 *****************************************************************/
+	public void AddNetworkSessionListener(INetworkSessionListener listener)
+	{
+		if(!_sessionListeners.contains(listener))
+		{
+			_sessionListeners.add(listener);
 		}
 	}
 	
@@ -78,9 +92,19 @@ public abstract class Network
 	 * 
 	 * @param listener the network information listener to remove
 	 *****************************************************************/
-	public void RemoveNetworkInfoListener(INetworkListener listener)
+	public void RemoveNetworkInfoListener(INetworkInfoListener listener)
 	{
-		_listeners.remove(listener);
+		_infoListeners.remove(listener);
+	}
+	
+	/*****************************************************************
+	 * Removes a network session listener.
+	 * 
+	 * @param listener the network session listener to remove
+	 *****************************************************************/
+	public void RemoveNetworkSessionListener(INetworkSessionListener listener)
+	{
+		_sessionListeners.remove(listener);
 	}
 	
 	/*****************************************************************
@@ -90,7 +114,7 @@ public abstract class Network
 	 *****************************************************************/
 	protected void FireNetworkInfoReceivedEvent(Object info)
 	{
-		for(INetworkListener listener : _listeners)
+		for(INetworkInfoListener listener : _infoListeners)
 		{
 			listener.InformationReceived(info);
 		}
@@ -103,7 +127,7 @@ public abstract class Network
 	 *****************************************************************/
 	protected void FireNetworkInfoSentEvent(Object info)
 	{
-		for(INetworkListener listener : _listeners)
+		for(INetworkInfoListener listener : _infoListeners)
 		{
 			listener.InformationSent(info);
 		}
@@ -114,7 +138,7 @@ public abstract class Network
 	 *****************************************************************/
 	protected void FireNetworkConnectedEvent(Network network)
 	{
-		for(INetworkListener listener : _listeners)
+		for(INetworkSessionListener listener : _sessionListeners)
 		{
 			listener.NetworkConnected(network);
 		}
@@ -126,7 +150,7 @@ public abstract class Network
 	 *****************************************************************/
 	protected void FireNetworkDisconnectedEvent()
 	{
-		for(INetworkListener listener : _listeners)
+		for(INetworkSessionListener listener : _sessionListeners)
 		{
 			listener.NetworkDisconnected();
 		}

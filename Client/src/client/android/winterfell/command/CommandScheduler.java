@@ -4,7 +4,8 @@ import java.util.PriorityQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 import client.android.winterfell.logging.Logger;
-import client.android.winterfell.network.INetworkListener;
+import client.android.winterfell.network.INetworkInfoListener;
+import client.android.winterfell.network.INetworkSessionListener;
 import client.android.winterfell.network.Network;
 
 /***************************************************************
@@ -16,7 +17,7 @@ import client.android.winterfell.network.Network;
  * 
  * @author Akram Kassay
  ***************************************************************/
-public final class CommandScheduler implements INetworkListener
+public final class CommandScheduler implements INetworkInfoListener, INetworkSessionListener
 {
 	/** A lock permitting only one thread to access the commands queue at a time **/
 	private static final ReentrantLock _queueLock = new ReentrantLock();
@@ -141,8 +142,7 @@ public final class CommandScheduler implements INetworkListener
 					{
 						_queueLock.lock();
 						{
-							Command command = _commandsQueue.poll();
-							command.Execute();
+							_commandsQueue.poll().Execute();
 						}
 						_queueLock.unlock();
 

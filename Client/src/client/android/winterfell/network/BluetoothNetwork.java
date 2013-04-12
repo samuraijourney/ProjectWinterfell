@@ -269,12 +269,16 @@ public final class BluetoothNetwork extends Network
 			throw e;
 		}
 		
-		JSONObject response;
+		JSONObject response = null;
 		_ioLock.lock();
 		{
 			try
 			{
-				response = new JSONObject(_inputStream.readLine());
+				String input = _inputStream.readLine();
+				if(input != null)
+				{
+					response = new JSONObject(input);
+				}
 			}
 			catch(IOException e)
 			{
@@ -291,7 +295,10 @@ public final class BluetoothNetwork extends Network
 		}
 		_ioLock.unlock();
 		
-		FireNetworkInfoReceivedEvent(response);
+		if(response != null)
+		{
+			FireNetworkInfoReceivedEvent(response);
+		}
 		
 		return response;
 	}

@@ -8,7 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import client.android.winterfell.logging.Logger;
-import client.android.winterfell.network.INetworkListener;
+import client.android.winterfell.network.INetworkSessionListener;
 import client.android.winterfell.network.Network;
 
 /***************************************************************
@@ -27,7 +27,7 @@ import client.android.winterfell.network.Network;
  * 
  * @author Akram Kassay
  ***************************************************************/
-public final class Command implements INetworkListener
+public final class Command implements INetworkSessionListener
 {
 	/** Network object which to communicate through **/
 	private Network _network;
@@ -154,7 +154,4 @@ public final class Command implements INetworkListener
 	{
 		_network = null;
 	}
-	
-	public final void InformationReceived(Object info) {}
-	public final void InformationSent(Object info) {}
 }
