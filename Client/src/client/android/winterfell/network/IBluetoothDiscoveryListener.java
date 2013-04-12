@@ -1,4 +1,4 @@
-package client.android.winterfell.network.listeners;
+package client.android.winterfell.network;
 
 import android.bluetooth.BluetoothDevice;
 

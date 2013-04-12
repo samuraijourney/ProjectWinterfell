@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 
-import client.android.winterfell.network.listeners.INetworkInfoListener;
 
 /***************************************************************
  * Governs the communications with any remote device, this is only
@@ -15,7 +14,7 @@ import client.android.winterfell.network.listeners.INetworkInfoListener;
  ***************************************************************/
 public abstract class Network 
 {	
-	private static ArrayList<INetworkInfoListener> _listeners = new ArrayList<INetworkInfoListener>();
+	private static ArrayList<INetworkListener> _listeners = new ArrayList<INetworkListener>();
 	
 	/*****************************************************************
 	 * Tries to establish a connection to the target object provided.
@@ -34,11 +33,6 @@ public abstract class Network
 	 * @throws IOException could not close streams or socket
 	 *****************************************************************/
 	public abstract void Disconnect() throws ConnectException, IOException;
-	
-	/*****************************************************************
-	 * Singleton method to access single instance of "Network"
-	 *****************************************************************/
-	public abstract Network Instance();
 	
 	/*****************************************************************
 	 * Indicates whether or not there is currently an active connection.
@@ -68,7 +62,7 @@ public abstract class Network
 	 * 
 	 * @param listener the network information listener to add
 	 *****************************************************************/
-	public void AddNetworkInfoListener(INetworkInfoListener listener)
+	public void AddNetworkInfoListener(INetworkListener listener)
 	{
 		if(!_listeners.contains(listener))
 		{
@@ -81,7 +75,7 @@ public abstract class Network
 	 * 
 	 * @param listener the network information listener to remove
 	 *****************************************************************/
-	public void RemoveNetworkInfoListener(INetworkInfoListener listener)
+	public void RemoveNetworkInfoListener(INetworkListener listener)
 	{
 		_listeners.remove(listener);
 	}
@@ -93,9 +87,45 @@ public abstract class Network
 	 *****************************************************************/
 	protected void FireNetworkInfoReceivedEvent(Object info)
 	{
-		for(INetworkInfoListener listener : _listeners)
+		for(INetworkListener listener : _listeners)
 		{
 			listener.InformationReceived(info);
+		}
+	}
+	
+	/*****************************************************************
+	 * Launches network info sent event for all listeners.
+	 * 
+	 * @param info the information sent through the IO connection
+	 *****************************************************************/
+	protected void FireNetworkInfoSentEvent(Object info)
+	{
+		for(INetworkListener listener : _listeners)
+		{
+			listener.InformationSent(info);
+		}
+	}
+	
+	/*****************************************************************
+	 * Launches event notifying all listeners that a connection is present.
+	 *****************************************************************/
+	protected void FireNetworkConnectedEvent(Network network)
+	{
+		for(INetworkListener listener : _listeners)
+		{
+			listener.NetworkConnected(network);
+		}
+	}
+	
+	/*****************************************************************
+	 * Launches event notifying all listeners that the connection has
+	 * been broken.
+	 *****************************************************************/
+	protected void FireNetworkDisconnectedEvent()
+	{
+		for(INetworkListener listener : _listeners)
+		{
+			listener.NetworkDisconnected();
 		}
 	}
 }

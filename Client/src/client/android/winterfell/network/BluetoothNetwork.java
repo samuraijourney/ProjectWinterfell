@@ -19,7 +19,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import client.android.logging.Logger;
 import client.android.winterfell.ApplicationInstance;
-import client.android.winterfell.network.listeners.IBluetoothDiscoveryListener;
 
 /***************************************************************
  * Definition of the bluetooth network and all its options.
@@ -28,7 +27,7 @@ import client.android.winterfell.network.listeners.IBluetoothDiscoveryListener;
  * 
  * @author Akram Kassay
  ***************************************************************/
-public class BluetoothNetwork extends Network
+public final class BluetoothNetwork extends Network
 {
 	/** The list of all already paired devices with the phone **/
 	private static ArrayList<BluetoothDevice> _pairedDevices = new ArrayList<BluetoothDevice>();
@@ -39,17 +38,17 @@ public class BluetoothNetwork extends Network
 	/** Object to wait on while the device discovery process completes **/
 	private static final Object _deviceDiscoveryWaitObject = new Object();
 	/** Lock allowing for only one item to access socket connection at a time **/
-	private final ReentrantLock _ioLock = new ReentrantLock();
+	private static final ReentrantLock _ioLock = new ReentrantLock();
 	/** Flag indicating whether or not there is an active connection **/
-	private boolean _connected = false;
+	private static boolean _connected = false;
 	/** Single instance of our bluetooth network class to be returned **/
-	private Network _bluetoothNetwork;
+	private static Network _bluetoothNetwork;
 	/** Input stream for reading responses from robot **/
-	private BufferedReader _inputStream;
+	private static BufferedReader _inputStream;
 	/** Output stream for sending commands to the robot **/
-	private BufferedOutputStream _outputStream;
+	private static BufferedOutputStream _outputStream;
 	/** Socket connection to communicate through during a session **/
-	private BluetoothSocket _socket;
+	private static BluetoothSocket _socket;
 	/** Unique pin identifier that must be matched on server and client in order to pair connection **/
 	private UUID _pin = UUID.fromString("winterfell");
 	
@@ -64,7 +63,7 @@ public class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/
-	public void Connect(Object target) throws IOException , IllegalArgumentException
+	public final void Connect(Object target) throws IOException , IllegalArgumentException
 	{
 		if(_connected)
 		{
@@ -108,12 +107,14 @@ public class BluetoothNetwork extends Network
 		_connected = true;
 		
 		Logger.Log.Info(String.format("Connection successful, now connected to pin:%s", _pin.toString()));
+		
+		FireNetworkConnectedEvent(this);
 	}
 
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/
-	public void Disconnect() throws ConnectException, IOException
+	public final void Disconnect() throws ConnectException, IOException
 	{
 		if(!_connected)
 		{
@@ -127,7 +128,9 @@ public class BluetoothNetwork extends Network
 		_ioLock.lock();
 		{
 			try
-			{
+			{		
+				FireNetworkDisconnectedEvent();
+				
 				_inputStream.close();
 				_outputStream.close();
 				_socket.close();
@@ -151,12 +154,12 @@ public class BluetoothNetwork extends Network
 	}
 	
 	/*****************************************************************
-	 * Formats the command to be sent by appending the CRLF indicator.
+	 * Formats the command, THIS WILL HAVE TO BE CHANGED.
 	 * 
 	 * @param command the string to format
 	 * @return the byte representation of the command to send
 	 *****************************************************************/
-	private byte[] FormatCommand(String command)
+	private final byte[] FormatCommand(String command)
 	{
 		command = command + "\n";
 		return command.getBytes();
@@ -169,7 +172,7 @@ public class BluetoothNetwork extends Network
 	 * 
 	 * @return the list of all discovered bluetooth devices.
 	 *****************************************************************/
-	public BluetoothDevice[] GetDiscoveredDevices()
+	public final BluetoothDevice[] GetDiscoveredDevices()
 	{
 		if(!BluetoothAdapter.getDefaultAdapter().startDiscovery())
 		{
@@ -210,7 +213,7 @@ public class BluetoothNetwork extends Network
 	 * 
 	 * @return the list of all paired bluetooth devices.
 	 *****************************************************************/
-	public BluetoothDevice[] GetPairedDevices()
+	public final BluetoothDevice[] GetPairedDevices()
 	{
 		Logger.Log.Info("Gathering all paired devices");
 		
@@ -233,9 +236,9 @@ public class BluetoothNetwork extends Network
 	}
 	
 	/*****************************************************************
-	 * {@inheritDoc}
+	 * Singleton method to access single instance of "Network".
 	 *****************************************************************/
-	public Network Instance() 
+	public final static Network Instance() 
 	{
 		if(_bluetoothNetwork == null)
 			_bluetoothNetwork = new BluetoothNetwork();
@@ -245,7 +248,7 @@ public class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/
-	public boolean IsConnected() 
+	public final boolean IsConnected() 
 	{
 		return _connected;
 	}
@@ -253,7 +256,7 @@ public class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/
-	protected String Read() throws IOException
+	protected final String Read() throws IOException
 	{
 		if(_inputStream == null)
 		{
@@ -286,8 +289,13 @@ public class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * {@inheritDoc}
 	 *****************************************************************/
-	public void Send(String command) throws IOException
+	public final void Send(String command) throws IOException
 	{
+		if(command == null)
+		{
+			return;
+		}
+		
 		if(_outputStream == null)
 		{
 			IOException e = new IOException("No output stream available");
@@ -316,7 +324,7 @@ public class BluetoothNetwork extends Network
 	 * 
 	 * @param listener the discovery listener to add
 	 *****************************************************************/
-	public synchronized void AddBluetoothDiscoveryListener(IBluetoothDiscoveryListener listener)
+	public final synchronized void AddBluetoothDiscoveryListener(IBluetoothDiscoveryListener listener)
 	{
 		if(!_listeners.contains(listener))
 		{
@@ -329,7 +337,7 @@ public class BluetoothNetwork extends Network
 	 * 
 	 * @param listener the discovery listener to remove
 	 *****************************************************************/
-	public synchronized void RemoveBluetoothDiscoveryListener(IBluetoothDiscoveryListener listener)
+	public final synchronized void RemoveBluetoothDiscoveryListener(IBluetoothDiscoveryListener listener)
 	{
 		_listeners.remove(listener);
 	}
@@ -339,7 +347,7 @@ public class BluetoothNetwork extends Network
 	 * 
 	 * @param device the bluetooth device discovered
 	 *****************************************************************/
-	private static void FireDeviceDiscoveredEvent(BluetoothDevice device)
+	private final static void FireDeviceDiscoveredEvent(BluetoothDevice device)
 	{
 		for(IBluetoothDiscoveryListener listener : _listeners)
 		{
@@ -350,7 +358,7 @@ public class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * Launches bluetooth discovery start event.
 	 *****************************************************************/
-	private static void FireDiscoveryStartEvent()
+	private final void FireDiscoveryStartEvent()
 	{
 		for(IBluetoothDiscoveryListener listener : _listeners)
 		{
@@ -361,7 +369,7 @@ public class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * Launches bluetooth discovery end event.
 	 *****************************************************************/
-	private static void FireDiscoveryEndEvent()
+	private final void FireDiscoveryEndEvent()
 	{
 		for(IBluetoothDiscoveryListener listener : _listeners)
 		{
@@ -377,7 +385,7 @@ public class BluetoothNetwork extends Network
 	 * 
 	 * @author Akram Kassay
 	 ***************************************************************/
-	private static class BluetoothDiscoverer
+	private final static class BluetoothDiscoverer
 	{
 		/** The broadcast receiver to receive discovery events **/
 		private static BroadcastReceiver _broadcastReceiver;
