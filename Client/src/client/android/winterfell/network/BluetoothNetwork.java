@@ -245,7 +245,12 @@ public final class BluetoothNetwork extends Network
 	public final static Network Instance() 
 	{
 		if(_bluetoothNetwork == null)
+		{
 			_bluetoothNetwork = new BluetoothNetwork();
+			
+			// Register all necessary network listeners for this class
+			NetworkListenerRegister.RegisterListeners(_bluetoothNetwork);
+		}
 		return _bluetoothNetwork;
 	}
 
