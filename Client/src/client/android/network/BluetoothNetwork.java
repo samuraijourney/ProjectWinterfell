@@ -171,45 +171,35 @@ public final class BluetoothNetwork extends Network
 	
 	/*****************************************************************
 	 * Searches for all available bluetooth devices and saves them into
-	 * a list. Do not run this function from the UI thread because this
-	 * search can take around 12 seconds and will freeze the UI.
+	 * a list. Do not run this function from the UI thread if "rediscover"
+	 * flag is set to true because this search can take around 12 seconds 
+	 * and will freeze the UI.
 	 * 
+	 * @param rediscover flag indicating whether to look for all discovered
+	 * 		  devices or just return the discovered devices list as it is.
+	 * 		  This list will not have anything in it is StartDiscovery() has
+	 * 		  not yet been called.
 	 * @return the list of all discovered bluetooth devices.
 	 *****************************************************************/
-	public final BluetoothDevice[] GetDiscoveredDevices()
+	public final BluetoothDevice[] GetDiscoveredDevices(boolean rediscover)
 	{
-		if(!BluetoothAdapter.getDefaultAdapter().startDiscovery())
+		if(rediscover)
 		{
-			return null;
+			StartDiscovery();
+			
+			try 
+			{
+				_deviceDiscoveryWaitObject.wait();
+			} 
+			catch (InterruptedException e) 
+			{
+				BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+				Logger.Log.Error("Bluetooth discovery service has been interrupted",e);
+				return null;
+			}	
 		}
 		
-		FireDiscoveryStartEvent();
-		
-		Logger.Log.Info("Bluetooth discovery started, searching for available devices");
-		
-		BroadcastReceiver receiver = BluetoothDiscoverer.CreateReceiver();
-		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-		
-		ApplicationInstance.GetContext().registerReceiver(receiver, filter);
-		
-		try 
-		{
-			_deviceDiscoveryWaitObject.wait();
-			ApplicationInstance.GetContext().unregisterReceiver(receiver);
-			// Do this just in case it hasn't stopped discovering for some strange reason
-			BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
-			
-			FireDiscoveryEndEvent();
-			
-			return _discoveredDevices.toArray(new BluetoothDevice[_discoveredDevices.size()]);
-		} 
-		catch (InterruptedException e) 
-		{
-			BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
-			Logger.Log.Error("Bluetooth discovery service has been interrupted",e);
-			return null;
-		}
+		return _discoveredDevices.toArray(new BluetoothDevice[_discoveredDevices.size()]);
 	}
 	
 	/*****************************************************************
@@ -342,6 +332,16 @@ public final class BluetoothNetwork extends Network
 	}
 	
 	/*****************************************************************
+	 * Begins bluetooth discovery process. In order to receive notifications
+	 * to device discovered events you must register a IBluetoothDiscoveryListener
+	 * with this class.
+	 *****************************************************************/
+	public final void StartDiscovery()
+	{
+		BluetoothDiscoverer.StartDiscovery();
+	}
+	
+	/*****************************************************************
 	 * Adds a bluetooth discovery listener.
 	 * 
 	 * @param listener the discovery listener to add
@@ -380,7 +380,7 @@ public final class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * Launches bluetooth discovery start event.
 	 *****************************************************************/
-	private final void FireDiscoveryStartEvent()
+	private final static void FireDiscoveryStartEvent()
 	{
 		for(IBluetoothDiscoveryListener listener : _listeners)
 		{
@@ -391,7 +391,7 @@ public final class BluetoothNetwork extends Network
 	/*****************************************************************
 	 * Launches bluetooth discovery end event.
 	 *****************************************************************/
-	private final void FireDiscoveryEndEvent()
+	private final static void FireDiscoveryEndEvent()
 	{
 		for(IBluetoothDiscoveryListener listener : _listeners)
 		{
@@ -417,7 +417,7 @@ public final class BluetoothNetwork extends Network
 		 * 
 		 * @return the receiver for the bluetooth discovery events
 		 *****************************************************************/
-		private static BroadcastReceiver CreateReceiver()
+		private static final BroadcastReceiver CreateReceiver()
 		{
 			_broadcastReceiver = new BroadcastReceiver()
 			{
@@ -439,11 +439,46 @@ public final class BluetoothNetwork extends Network
 				   {
 					   Logger.Log.Info("Bluetooth discovery finished");
 					   _deviceDiscoveryWaitObject.notify();
+					   BluetoothNetwork.FireDiscoveryEndEvent();
+					   ApplicationInstance.GetContext().unregisterReceiver(_broadcastReceiver);
 				   }
 				}
 			};
 			
 			return _broadcastReceiver;
+		}
+		
+		/*****************************************************************
+		 * Begins the bluetooth discovery process in a separate thread, anyone
+		 * interested in these events should subscribe to the IBluetoothDiscoveryListener.
+		 *****************************************************************/
+		private static final void StartDiscovery()
+		{
+			if(_broadcastReceiver == null)
+			{
+				_broadcastReceiver = CreateReceiver();
+			}
+			
+			new Thread(new Runnable()
+			{
+				public void run() 
+				{
+					if(!BluetoothAdapter.getDefaultAdapter().startDiscovery())
+					{
+						return;
+					}
+					
+					BluetoothNetwork.FireDiscoveryStartEvent();
+					
+					Logger.Log.Info("Bluetooth discovery started, searching for available devices");
+					
+					IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+					
+					filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+					
+					ApplicationInstance.GetContext().registerReceiver(_broadcastReceiver, filter);
+				}
+			},"Bluetooth Discovery").start();
 		}
 	}
 }
