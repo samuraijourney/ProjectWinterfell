@@ -432,14 +432,14 @@ public final class BluetoothNetwork extends Network
 		             {
 		            	 _discoveredDevices.add(device);
 		            	 Logger.Log.Info(String.format("Discovered device: %s",device.getName()));
-		            	 BluetoothNetwork.FireDeviceDiscoveredEvent(device);
+		            	 FireDeviceDiscoveredEvent(device);
 		             }
 			       }
 				   else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action))
 				   {
 					   Logger.Log.Info("Bluetooth discovery finished");
 					   _deviceDiscoveryWaitObject.notify();
-					   BluetoothNetwork.FireDiscoveryEndEvent();
+					   FireDiscoveryEndEvent();
 					   ApplicationInstance.GetContext().unregisterReceiver(_broadcastReceiver);
 				   }
 				}
@@ -468,7 +468,7 @@ public final class BluetoothNetwork extends Network
 						return;
 					}
 					
-					BluetoothNetwork.FireDiscoveryStartEvent();
+					FireDiscoveryStartEvent();
 					
 					Logger.Log.Info("Bluetooth discovery started, searching for available devices");
 					
