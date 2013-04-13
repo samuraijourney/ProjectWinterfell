@@ -54,7 +54,7 @@ public final class BluetoothNetwork extends Network
 	/** Socket connection to communicate through during a session **/
 	private static BluetoothSocket _socket;
 	/** Unique pin identifier that must be matched on server and client in order to pair connection **/
-	private UUID _pin = UUID.fromString("winterfell");
+	private UUID _pin;
 	
 	/*****************************************************************
 	 * Constructor for bluetooth network object. This is private because
@@ -249,7 +249,7 @@ public final class BluetoothNetwork extends Network
 			_bluetoothNetwork = new BluetoothNetwork();
 			
 			// Register all necessary network listeners for this class
-			NetworkListenerRegister.RegisterListeners(_bluetoothNetwork);
+			//NetworkListenerRegister.RegisterListeners(_bluetoothNetwork);
 		}
 		return _bluetoothNetwork;
 	}
