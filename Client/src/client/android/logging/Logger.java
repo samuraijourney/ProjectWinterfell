@@ -134,10 +134,12 @@ public class Logger
 		{
 			_stackTraceIndex++;
 			
-			StackTraceElement stackTrace = Thread.currentThread().getStackTrace()[_stackTraceIndex];
+			// The additional constant of 2 is to account for the internal functions called that 
+			// get added to the call stack.
+			StackTraceElement stackTrace = Thread.currentThread().getStackTrace()[_stackTraceIndex + 2];
 			_stackTraceIndex = 0;
 			
-			return stackTrace.getClassName() + ":" + stackTrace.getMethodName();
+			return stackTrace.getClassName() + ":" + stackTrace.getMethodName() + ":" + stackTrace.getLineNumber();
 		}
 		
 		/*****************************************************************
