@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import org.apache.http.ParseException;
 import org.json.JSONObject;
 
-
 /***************************************************************
  * Governs the communications with any remote device, this is only
  * the base class and must be extended to allow for more specific

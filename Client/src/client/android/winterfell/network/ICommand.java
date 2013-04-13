@@ -1,4 +1,4 @@
-package client.android.winterfell.command;
+package client.android.winterfell.network;
 
 import org.json.JSONException;
 import org.json.JSONObject;

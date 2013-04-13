@@ -1,4 +1,4 @@
-package client.android.winterfell.command;
+package client.android.winterfell.network;
 
 import java.io.IOException;
 
@@ -8,8 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import client.android.winterfell.logging.Logger;
-import client.android.winterfell.network.INetworkSessionListener;
-import client.android.winterfell.network.Network;
 
 /***************************************************************
  * Executable item which possesses the ability to store a command
@@ -27,10 +25,8 @@ import client.android.winterfell.network.Network;
  * 
  * @author Akram Kassay
  ***************************************************************/
-public final class Command implements INetworkSessionListener
+public final class Command
 {
-	/** Network object which to communicate through **/
-	private Network _network;
 	/** Command to send over the network to server **/
 	private JSONObject _command;
 	
@@ -65,13 +61,13 @@ public final class Command implements INetworkSessionListener
 	{
 		try 
 		{
-			if(_command == null || _network == null)
+			if(_command == null || ApplicationCommands.GetNetwork() == null)
 			{
-				Assert.assertEquals("The network is null!",_network, null);
+				Assert.assertEquals("The network is null!",ApplicationCommands.GetNetwork(), null);
 				Assert.assertEquals("The command is null!",_command, null);
 				return;
 			}
-			_network.Send(_command);
+			ApplicationCommands.GetNetwork().Send(_command);
 		} 
 		catch (IOException e) 
 		{
@@ -137,21 +133,5 @@ public final class Command implements INetworkSessionListener
 			}
 		}
 		return false;
-	}
-
-	/*****************************************************************
-	 * {@inheritDoc}
-	 *****************************************************************/
-	public final void NetworkConnected(Network network) 
-	{
-		_network = network;
-	}
-
-	/*****************************************************************
-	 * {@inheritDoc}
-	 *****************************************************************/
-	public final void NetworkDisconnected() 
-	{
-		_network = null;
 	}
 }

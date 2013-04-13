@@ -1,12 +1,9 @@
-package client.android.winterfell.command;
+package client.android.winterfell.network;
 
 import java.util.PriorityQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 import client.android.winterfell.logging.Logger;
-import client.android.winterfell.network.INetworkInfoListener;
-import client.android.winterfell.network.INetworkSessionListener;
-import client.android.winterfell.network.Network;
 
 /***************************************************************
  * Stores commands and executes them when it is it's turn in the
@@ -132,6 +129,9 @@ public final class CommandScheduler implements INetworkInfoListener, INetworkSes
 		/** The sleep interval between the scheduler threads iterations **/
 		private static final int _sleepInterval = 50;
 		
+		/*****************************************************************
+		 * Executable function for the thread.
+		 *****************************************************************/
 		public void run() 
 		{
 			while(true)
