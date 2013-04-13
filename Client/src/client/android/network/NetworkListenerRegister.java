@@ -1,5 +1,7 @@
 package client.android.network;
 
+import client.android.logging.Logger;
+
 /***************************************************************
  * Access point class to register all network listeners.
  * 
@@ -21,6 +23,14 @@ public final class NetworkListenerRegister
 	 *****************************************************************/
 	public static final void RegisterListeners(Network network)
 	{
+		if(network == null)
+		{
+			Logger.Log.Info("Unable to register listeners due to null network");
+			return;
+		}
+		
+		Logger.Log.Info("Registering all listeners");
+		
 		network.AddNetworkInfoListener(CommandScheduler.Instance());
 		network.AddNetworkSessionListener(CommandScheduler.Instance());
 		network.AddNetworkSessionListener(Reader.Instance());
