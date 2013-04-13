@@ -14,10 +14,10 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:name="client.android.winterfell.ApplicationInstance"
+        android:name="client.android.main.ApplicationInstance"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="client.android.winterfell.MainActivity"
+            android:name="client.android.main.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
